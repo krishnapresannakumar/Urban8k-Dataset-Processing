@@ -1,0 +1,30 @@
+import os
+import numpy as np
+from sklearn.svm import SVC
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
+
+# Set the path to the directory where the features are stored
+feature_dir = '/path/to/features/'
+
+# Load the normalized fused features
+features = np.load(os.path.join(feature_dir, 'norm_features.npy'))
+
+# Load the labels for the audio clips
+labels = np.load(os.path.join(feature_dir, 'labels.npy'))
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.2, random_state=42)
+
+# Create a SVM classifier
+clf = SVC(kernel='rbf', C=1, gamma=1)
+
+# Train the classifier on the training data
+clf.fit(X_train, y_train)
+
+# Test the classifier on the testing data
+y_pred = clf.predict(X_test)
+
+# Print the classification report
+print(classification_report(y_test, y_pred))
+
