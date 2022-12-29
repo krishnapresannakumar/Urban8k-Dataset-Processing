@@ -1,0 +1,26 @@
+import numpy as np
+
+# Set the path to the directory where the features are stored
+feature_dir = '/path/to/features/'
+
+# Load the ZCR, MFCC, LFCC, spectral centroid, and STFT features
+zcr = np.load(os.path.join(feature_dir, 'zcrFeatures.npy'))
+mfcc = np.load(os.path.join(feature_dir, 'mfccFeatures.npy'))
+lfcc = np.load(os.path.join(feature_dir, 'lfccFeatures.npy'))
+centroid = np.load(os.path.join(feature_dir, 'centroid.npy'))
+stft = np.load(os.path.join(feature_dir, 'stftFeatures.npy'))
+
+# Concatenate the features along the first axis
+features = np.concatenate((zcr, mfcc, lfcc, centroid, stft), axis=1)
+
+# Calculate the mean of the features
+mean_features = np.mean(features, axis=0)
+
+# Calculate the standard deviation of the features
+std_features = np.std(features, axis=0)
+
+# Normalize the features
+norm_features = (features - mean_features) / std_features
+
+# Save the normalized features as a NumPy array
+np.save(os.path.join(feature_dir, 'norm_features.npy'), norm_features)
