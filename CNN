@@ -1,0 +1,34 @@
+import tensorflow as tf
+import numpy as np
+
+# Set the path to the directory where the features are stored
+feature_dir = '/path/to/features/'
+
+# Load the normalized features
+features = np.load(os.path.join(feature_dir, 'norm_features.npy'))
+
+# Load the labels
+labels = np.load(os.path.join(feature_dir, 'labels.npy'))
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.2)
+
+# Convert the labels to categorical format
+y_train = tf.keras.utils.to_categorical(y_train)
+y_test = tf.keras.utils.to_categorical(y_test)
+
+# Define the model architecture
+model = tf.keras.Sequential()
+model.add(tf.keras.layers.Conv1D(filters=32, kernel_size=3, activation='relu', input_shape=(X_train.shape[1], 1)))
+model.add(tf.keras.layers.MaxPool1D(pool_size=2))
+model.add(tf.keras.layers.Flatten())
+model.add(tf.keras.layers.Dense(units=128, activation='relu'))
+model.add(tf.keras.layers.Dense(units=10, activation='softmax'))
+
+# Compile the model
+model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+X_train = X_train.reshape(X_train.shape[0], X_train.shape[1], 1)
+X_test = X_test.reshape(X_test.shape[0], X_test.shape[1], 1)
+
+# Fit the model using the training data
+history = model.fit(X_train, y_train, epochs=10, batch_size=64, validation_data=(X_test, y_test))
