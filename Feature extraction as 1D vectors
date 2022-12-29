@@ -1,0 +1,96 @@
+import os
+import librosa
+import numpy as np
+
+# Set the path to the root directory of the UrbanSound 8K dataset
+root_dir = '/path/to/UrbanSound8K/'
+
+# Set the path to the directory where the features will be saved
+output_dir = '/path/to/output/'
+# Iterate over all the folds in the dataset
+for fold in range(1, 10):
+  # Set the path to the current fold
+  fold_dir = os.path.join(root_dir, 'fold' + str(fold))
+
+  # Iterate over all the audio files in the current fold
+  for file in os.listdir(fold_dir):
+    # Load the audio file using librosa
+    audio, sr = librosa.load(os.path.join(fold_dir, file))
+    # Set the duration of the audio clips in seconds
+    clip_duration = 3
+
+    # Set the sample rate of the audio files
+    sample_rate = 44100
+
+    # Set the number of samples per audio clip
+    num_samples = int(clip_duration * sample_rate)
+
+    # Iterate over all the audio files in the dataset
+    for file in os.listdir(root_dir):
+      # Load the audio file using librosa
+      audio, sr = librosa.load(os.path.join(root_dir, file), sr=sample_rate)
+
+      # Split the audio into overlapping clips
+      clips = librosa.util.frame(audio, frame_length=num_samples, hop_length=num_samples // 2).T
+
+      # Normalize the audio clips
+      clips = (clips - np.mean(clips, axis=1, keepdims=True)) / np.std(clips, axis=1, keepdims=True)
+
+      # Extract features from the audio clips
+      features = []
+      for clip in clips:
+        # Calculate the Mel-frequency cepstral coefficients (MFCCs)
+        mfccs = librosa.feature.mfcc(y=clip, sr=sample_rate, n_mfcc=20)
+
+        # Flatten the MFCCs into a 1D array
+        mfccs = mfccs.flatten()
+
+        # Add the MFCCs to the list of features
+        features.append(mfccs)
+        # Calculate the linear frequency cepstral coefficients (LFCCs)
+        lfccs = librosa.feature.lfcc(y=clip, sr=sample_rate, n_mfcc=20)
+
+    # Flatten the LFCCs into a 1D array
+    lfccs = lfccs.flatten()
+
+    # Add the LFCCs to the list of features
+    features.append(lfccs)
+     # Calculate the short-time Fourier transform (STFT) of the audio clip
+    stft = librosa.stft(clip)
+
+    # Flatten the STFT into a 1D array
+    stft = stft.flatten()
+
+    # Add the STFT to the list of features
+    features.append(stft)
+        # Calculate the zero crossing rate (ZCR)
+    zcr = librosa.feature.zero_crossing_rate(clip)
+
+    # Flatten the ZCR into a 1D array
+    zcr = zcr.flatten()
+
+    # Add the ZCR to the list of features
+    features.append(zcr)
+    # Calculate the spectral centroid
+    centroid = librosa.feature.spectral_centroid(y=clip, sr=sample_rate)
+
+    # Flatten the spectral centroid into a 1D array
+    centroid = centroid.flatten()
+
+    # Add the spectral centroid to the list of features
+    features.append(centroid)
+
+  # Save the features as a NumPy array
+  np.save(os.path.join(output_dir, 'SCfeatures.npy'), np.array(features))
+
+  # Save the features as a NumPy array
+  np.save(os.path.join(output_dir, 'ZCRfeatures.npy'), np.array(features))
+
+  # Save the features as a NumPy array
+  np.save(os.path.join(output_dir, 'STFTfeatures.npy'), np.array(features))
+
+  # Save the features as a NumPy array
+  np.save(os.path.join(output_dir, 'MFCCfeatures.npy'), np.array(features))
+
+  # Save the features as a NumPy array
+  np.save(os.path.join(output_dir, 'LFCCfeatures.npy'), np.array(features))
