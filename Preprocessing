@@ -1,0 +1,60 @@
+import os
+import librosa
+import numpy as np
+import scipy.signal
+#Fetching data
+# Set the path to the root directory of the UrbanSound dataset
+root_dir = '/path/to/UrbanSound/'
+
+# Iterate over all the folds in the dataset
+for fold in range(1, 10)
+  # Set the path to the current fold
+  fold_dir = os.path.join(root_dir, 'fold' + str(fold))
+
+  # Iterate over all the audio files in the current fold
+  for file in os.listdir(fold_dir):
+    # Load the audio file using librosa
+    audio, sr = librosa.load(os.path.join(fold_dir, file))
+    # Set the duration of the audio clips in seconds
+    clip_duration = 3
+
+    # Set the sample rate of the audio files
+    sample_rate = 44100
+
+    # Set the number of samples per audio clip
+    num_samples = int(clip_duration * sample_rate)
+
+    # Iterate over all the audio files in the dataset
+    for file in os.listdir(root_dir):
+      # Load the audio file using librosa
+      audio, sr = librosa.load(os.path.join(root_dir, file), sr=sample_rate)
+
+      # Split the audio into overlapping clips
+      clips = librosa.util.frame(audio, frame_length=num_samples, hop_length=num_samples // 2).T
+
+      # Normalize the audio clips
+      clips = (clips - np.mean(clips, axis=1, keepdims=True)) / np.std(clips, axis=1, keepdims=True)
+
+      # Save the preprocessed audio clips to the output directory
+      for i, clip in enumerate(clips):
+        np.save(os.path.join(output_dir, 'clip_' + str(i) + '.npy'), clip)
+      # Set the cutoff frequency of the low-pass filter
+        cutoff_frequency = 1000
+
+        # Set the order of the low-pass filter
+        order = 5
+
+        # Calculate the Nyquist frequency
+        nyquist_frequency = sample_rate / 2
+
+        # Calculate the normalized cutoff frequency of the low-pass filter
+        normalized_cutoff_frequency = cutoff_frequency / nyquist_frequency
+
+        # Design the low-pass filter
+        b, a = scipy.signal.butter(order, normalized_cutoff_frequency, 'low')
+
+        # Apply the low-pass filter to the audio data
+        filtered_audio = scipy.signal.filtfilt(b, a, audio)
+# Save the preprocessed audio clips to the output directory
+      for i, clip in enumerate(clips):
+        np.save(os.path.join(output_dir, 'clip_' + str(i) + '.npy'), clip)
