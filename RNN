@@ -1,0 +1,126 @@
+import tensorflow as tf
+import numpy as np
+
+# Set the path to the directory where the features are stored
+feature_dir = '/path/to/features/'
+
+# Load the normalized fused features
+features = np.load(os.path.join(feature_dir, 'norm_features.npy'))
+
+# Set the number of classes
+num_classes = 10
+
+# Set the size of the hidden state of the RNN
+hidden_size = 128
+
+# Set the number of epochs
+num_epochs = 10
+
+# Set the batch size
+batch_size = 64
+
+# Set the learning rate
+learning_rate = 0.001
+
+# Set the dropout rate
+dropout_rate = 0.5
+
+# Set the shape of the input tensor
+input_shape = (None, features.shape[1])
+
+# Create the input tensor
+inputs = tf.keras.layers.Input(shape=input_shape)
+
+# Create the RNN
+rnn = tf.keras.layers.LSTM(hidden_size, return_sequences=True)(inputs)
+
+# Apply dropout to the RNN output
+rnn = tf.keras.layers.Dropout(dropout_rate)(rnn)
+
+# Flatten the output of the RNN
+flat = tf.keras.layers.Flatten()(rnn)
+
+# Add a dense layer with ReLU activation
+dense = tf.keras.layers.Dense(hidden_size, activation='relu')(flat)
+
+# Apply dropout to the output of the dense layer
+dense = tf.keras.layers.Dropout(dropout_rate)(dense)
+
+# Add a dense
+# Add a dense layer with softmax activation for classification
+output = tf.keras.layers.Dense(num_classes, activation='softmax')(dense)
+
+# Create the model
+model = tf.keras.Model(inputs=inputs, outputs=output)
+
+# Compile the model with Adam optimizer and categorical cross-entropy loss
+model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate), loss='categorical_crossentropy', metrics=['accuracy'])
+
+# Define the callback to save the best model
+checkpoint = tf.keras.callbacks.ModelCheckpoint('model.h5', save_best_only=True, verbose=1)
+
+# Define the callback to reduce the learning rate when the validation loss plateaus
+lr_reducer = tf.keras.callbacks.ReduceLROnPlateau(factor=0.5, patience=10, verbose=1)
+
+# Define the callback to early stop the training when the validation loss plateaus
+early_stopper = tf.keras.callbacks.EarlyStopping(patience=20, verbose=1)
+
+# Create a generator to generate batches of data for training
+# Create a generator to generate batches of data for training
+def generator(features, labels, batch_size):
+  while True:
+    # Shuffle the data
+    indices = np.random.permutation(features.shape[0])
+    features = features[indices]
+    labels = labels[indices]
+
+    # Divide the data into batches
+    for i in range(0, features.shape[0], batch_size):
+      yield features[i:i+batch_size], labels[i:i+batch_size]
+
+# Load the labels for the audio signals
+labels = np.load(os.path.join(feature_dir, 'labels.npy'))
+
+# Convert the labels to one-hot encoding
+labels = tf.keras.utils.to_categorical(labels, num_classes)
+
+# Create the training and validation sets
+split = int(0.8 * features.shape[0])
+x_train, x_val = features[:split], features[split:]
+y_train, y_val = labels[:split], labels[split:]
+
+# Create the generator for the training set
+train_gen = generator(x_train, y_train, batch_size)
+
+# Create the generator for the validation set
+val_gen = generator(x_val, y_val, batch_size)
+
+# Fit the model using the generators
+history = model.fit(train_gen,
+                    epochs=num_epochs,
+                    steps_per_epoch=x_train.shape[0] // batch_size,
+                    validation_data=val_gen,
+                    validation_steps=x_val.shape[0] // batch_size,
+                    callbacks=[checkpoint, lr_reducer, early_stopper])
+
+# Plot the training and validation loss and accuracy
+acc = history.history['accuracy']
+val_acc = history.history['val_accuracy']
+loss = history.history['loss']
+val_loss = history.history['val_loss']
+epochs_range = range(num_epochs)
+
+plt.figure(figsize=(8, 8))
+plt.subplot(2, 1, 1)
+plt.plot(epochs_range, acc, label='Training Accuracy')
+plt.plot(epochs_range, val_acc, label='Validation Accuracy')
+plt.legend(loc='lower right')
+plt.title('Training and Validation Accuracy')
+
+plt.subplot(2, 1, 2)
+plt.plot(epochs_range, loss, label='Training Loss')
+plt.plot(epochs_range, val_loss, label='Validation Loss')
+plt.legend(loc='upper right')
+plt.title('Training and Validation Loss')
+plt.show()
+
